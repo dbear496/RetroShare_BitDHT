@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 set(BD_BOOT_FILE "${PROJECT_SOURCE_DIR}/src/bitdht/bdboot.txt")
 
 if(WIN32)
+	target_link_libraries(${PROJECT_NAME} "-lws2_32" "-lwsock32")
 	target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
 
 	# Some files trip strict GCC >= 15 diagnostics that are now errors by
