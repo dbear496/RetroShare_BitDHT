@@ -18,14 +18,18 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ------------------------------------------------------------------------ */
 
-target_sources(${PROJECT_NAME} PRIVATE
-  PUBLIC FILE_SET HEADERS FILES
+# 3.1 : target_sources()
+# 3.13: CMP0076
+cmake_minimum_required(VERSION 3.13...4.4)
+
+target_sources(${PROJECT_NAME}
+  ${PUBLIC_FILESET_HEADERS_FILES}
   udpbitdht.h
   udplayer.h
   udpproxylayer.h
   udpstack.h
 
-  PRIVATE
+  ${PRIVATE_FILESET_SOURCES_FILES}
   udpbitdht.cc
   udplayer.cc
   udpstack.cc

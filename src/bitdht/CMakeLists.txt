@@ -18,8 +18,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ------------------------------------------------------------------------ */
 
+# 3.1 : target_sources()
+# 3.13: CMP0076
+cmake_minimum_required(VERSION 3.13...4.4)
+
 target_sources(${PROJECT_NAME}
-  PUBLIC FILE_SET HEADERS FILES
+  ${PUBLIC_FILESET_HEADERS_FILES}
   bdaccount.h
   bdconnection.h
   bdfilter.h
@@ -38,7 +42,7 @@ target_sources(${PROJECT_NAME}
   bdstore.h
   bencode.h
 
-  PRIVATE
+  ${PRIVATE_FILESET_SOURCES_FILES}
   bdaccount.cc
   bdconnection.cc
   bdfilter.cc

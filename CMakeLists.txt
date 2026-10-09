@@ -5,7 +5,10 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-cmake_minimum_required(VERSION 3.15)
+# 3.1 : configure_package_config_file(INSTALL_PREFIX)
+# 3.11: add_library() ... target_sources()
+cmake_minimum_required(VERSION 3.11...4.4)
+
 project(bitdht)
 
 include(GNUInstallDirs)
@@ -40,11 +43,48 @@ add_subdirectory(src)
 
 
 ### installation
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
+	set(FILESET_INSTALL
+		FILE_SET HEADERS DESTINATION "${BD_INSTALL_INCLUDEDIR}"
+	)
+else()
+	set(FILESET_INSTALL INCLUDES DESTINATION ${BD_INSTALL_INCLUDEDIR})
+	get_target_property(${PROJECT_NAME}_SOURCES ${PROJECT_NAME} SOURCES)
+	set(headerExtensions .h .hh .h++ .hpp)
+	foreach(source ${${PROJECT_NAME}_SOURCES})
+		cmake_path(GET source EXTENSION ext)
+		string(TOLOWER ${ext} ext)
+		if(NOT ext IN_LIST headerExtensions)
+			continue()
+		endif()
+		foreach(base_ ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
+			cmake_path(IS_PREFIX base_ ${source} basefound)
+			if(basefound)
+				set(base ${base_})
+				break()
+			endif()
+		endforeach()
+		if(NOT basefound)
+			message(SEND_ERROR "couldn't find base for header ${source}")
+			continue()
+		endif()
+
+		cmake_path(GET source PARENT_PATH dest)
+		cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${base})
+		install(FILES ${source}
+			DESTINATION ${BD_INSTALL_INCLUDEDIR}/${dest}
+			COMPONENT ${PROJECT_NAME}
+		)
+	endforeach()
+endif()
+
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}_export
 	COMPONENT ${PROJECT_NAME}
-  FILE_SET HEADERS DESTINATION "${BD_INSTALL_INCLUDEDIR}"
+  ${FILESET_INSTALL}
 )
+
 
 install(
 	FILES "${BD_BOOT_FILE}"
@@ -62,7 +102,8 @@ install(EXPORT ${PROJECT_NAME}_export
 )
 include(CMakePackageConfigHelpers)
 set(BD_INSTALL_BOOT_FILE "${BD_INSTALL_DATADIR}/bdboot.txt")
-configure_package_config_file(mk/cmake/${PROJECT_NAME}-config.cmake.in
+configure_package_config_file(
+	mk/cmake/${PROJECT_NAME}-config.cmake.in
   cmake/${PROJECT_NAME}-config_installed.cmake
   INSTALL_DESTINATION "${CONFIG_DIR}"
 	PATH_VARS BD_INSTALL_BOOT_FILE
@@ -81,12 +122,17 @@ export(EXPORT ${PROJECT_NAME}_export
 )
 include(CMakePackageConfigHelpers)
 set(PACKAGE_BD_INSTALL_BOOT_FILE "${BD_BOOT_FILE}")
-configure_package_config_file(mk/cmake/${PROJECT_NAME}-config.cmake.in
+configure_package_config_file(
+	mk/cmake/${PROJECT_NAME}-config.cmake.in
   cmake/${PROJECT_NAME}-config.cmake
   INSTALL_DESTINATION cmake
+	INSTALL_PREFIX ${PROJECT_BINARY_DIR}
 )
 
 # config package for CMAKE_FIND_PACKAGE_REDIRECTS_DIR
+if(CMAKE_VERSION VERSION_LESS 3.24)
+	set(CMAKE_FIND_PACKAGE_REDIRECTS_DIR ${CMAKE_BINARY_DIR}/pkgRedirects)
+endif()
 configure_file(
 	mk/cmake/${PROJECT_NAME}-config_redirects.cmake.in
   "${CMAKE_FIND_PACKAGE_REDIRECTS_DIR}/${PROJECT_NAME}-config.cmake"
